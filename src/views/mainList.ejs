@@ -1,0 +1,68 @@
+<%- include('partials/header', { title: 'רשימה ראשית', activeTab: 'main-list', currentUser: currentUser }) %>
+<div class="page-head">
+  <h1>הרשימה הראשית</h1>
+  <p>כל הפריטים שאושרו על ידי הורה, ממוזגים לרשימה משותפת אחת.</p>
+</div>
+
+<% if (cycle.status === 'locked') { %>
+  <div class="banner locked">
+    הרשימה נעולה — אפשר לצאת לקניות.
+    <% if (currentUser.role === 'parent') { %>
+      אפשר גם <a href="/purchase-report">לדווח מה נקנה</a> בסיום.
+    <% } %>
+  </div>
+<% } else { %>
+  <div class="banner info">הרשימה פתוחה לעדכונים — פריטים חדשים שיאושרו יתווספו אליה.</div>
+<% } %>
+
+<div id="lock-error" class="helper-text" style="color: var(--danger-ink); display: none;"></div>
+
+<% if (currentUser.role === 'parent') { %>
+  <div class="btn-row" style="margin-bottom: 18px;">
+    <% if (cycle.status === 'open') { %>
+      <button id="lock-btn" class="btn btn-primary">נעל רשימה</button>
+    <% } else if (cycle.status === 'locked') { %>
+      <button id="unlock-btn" class="btn btn-secondary">שחרר נעילה (לאישור פריטים נוספים)</button>
+    <% } %>
+  </div>
+<% } %>
+
+<% if (items.length === 0) { %>
+  <div class="empty-state">עדיין אין פריטים ברשימה הראשית במחזור הנוכחי.</div>
+<% } else { %>
+  <table class="list-table">
+    <thead>
+      <tr><th>מוצר</th><th>כמות</th><th>הערות</th></tr>
+    </thead>
+    <tbody>
+      <% items.forEach(function(item) { %>
+        <tr>
+          <td><%= item.product_name %></td>
+          <td><%= item.quantity || '—' %></td>
+          <td><%= item.notes || '—' %></td>
+        </tr>
+      <% }); %>
+    </tbody>
+  </table>
+<% } %>
+
+<script>
+  async function callLockApi(path) {
+    const errorBox = document.getElementById('lock-error');
+    errorBox.style.display = 'none';
+    try {
+      const res = await fetch(path, { method: 'POST' });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || 'משהו השתבש, נסו שוב');
+      window.location.reload();
+    } catch (err) {
+      errorBox.textContent = err.message;
+      errorBox.style.display = 'block';
+    }
+  }
+  const lockBtn = document.getElementById('lock-btn');
+  if (lockBtn) lockBtn.addEventListener('click', () => callLockApi('/api/main-list/lock'));
+  const unlockBtn = document.getElementById('unlock-btn');
+  if (unlockBtn) unlockBtn.addEventListener('click', () => callLockApi('/api/main-list/unlock'));
+</script>
+<%- include('partials/footer') %>

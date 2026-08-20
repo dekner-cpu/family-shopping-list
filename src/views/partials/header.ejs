@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title><%= typeof title !== 'undefined' ? title + ' — רשימת קניות' : 'רשימת קניות' %></title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Assistant:wght@400;600;700&family=Suez+One&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+<% if (typeof currentUser !== 'undefined' && currentUser) { %>
+  <header class="app-bar">
+    <div class="app-bar-inner">
+      <a class="brand" href="/my-list">רשימת קניות</a>
+      <div class="who">
+        שלום, <strong><%= currentUser.name %></strong>
+        · <a href="/session/logout">החלף משתמש</a>
+      </div>
+    </div>
+    <% const active = typeof activeTab !== 'undefined' ? activeTab : ''; %>
+    <nav class="tabs">
+      <a href="/my-list" class="<%= active === 'my-list' ? 'active' : '' %>">הרשימה שלי</a>
+      <a href="/main-list" class="<%= active === 'main-list' ? 'active' : '' %>">רשימה ראשית</a>
+      <% if (currentUser.role === 'parent') { %>
+        <a href="/review" class="<%= active === 'review' ? 'active' : '' %>">אישורים</a>
+      <% } %>
+      <a href="/purchase-report" class="<%= active === 'purchase-report' ? 'active' : '' %>">דיווח קניות</a>
+      <a href="/history" class="<%= active === 'history' ? 'active' : '' %>">היסטוריה</a>
+    </nav>
+  </header>
+<% } %>
+<main>

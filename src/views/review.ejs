@@ -1,0 +1,38 @@
+<%- include('partials/header', { title: 'תור אישורים', activeTab: 'review', currentUser: currentUser }) %>
+<div class="page-head">
+  <h1>תור אישורים</h1>
+  <p>אשרו או דחו כל פריט בנפרד. מספיק אישור של הורה אחד כדי שהפריט יעבור לרשימה הראשית.</p>
+</div>
+
+<% if (cycleLocked) { %>
+  <div class="banner locked">
+    הרשימה הראשית נעולה — לא ניתן לאשר פריטים כרגע.
+    <a href="/main-list">שחררו את הנעילה בעמוד הרשימה הראשית</a> כדי להמשיך לאשר.
+  </div>
+<% } %>
+
+<% if (queue.length === 0) { %>
+  <div class="empty-state">אין פריטים הממתינים לאישור כרגע.</div>
+<% } %>
+
+<% queue.forEach(function(item) { %>
+  <div class="ticket status-pending" data-item-id="<%= item.id %>">
+    <div class="ticket-row">
+      <div class="ticket-main">
+        <div class="ticket-product"><%= item.product_name %></div>
+        <% if (item.quantity) { %><div class="ticket-meta">כמות: <%= item.quantity %></div><% } %>
+        <% if (item.notes) { %><div class="ticket-meta"><%= item.notes %></div><% } %>
+        <div class="ticket-submitter">הועלה על ידי <%= item.submitter_name %></div>
+        <div class="review-error helper-text" style="color: var(--danger-ink); display: none;"></div>
+        <div class="btn-row">
+          <button class="btn btn-approve approve-btn" <%= cycleLocked ? 'disabled' : '' %>>אשר</button>
+          <button class="btn btn-reject reject-btn">דחה</button>
+        </div>
+      </div>
+      <span class="stamp pending">ממתין</span>
+    </div>
+  </div>
+<% }); %>
+
+<script src="/js/review.js"></script>
+<%- include('partials/footer') %>

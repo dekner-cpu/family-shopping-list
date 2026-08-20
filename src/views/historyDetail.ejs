@@ -1,0 +1,34 @@
+<%- include('partials/header', { title: 'פרטי מחזור', activeTab: 'history', currentUser: currentUser }) %>
+<div class="page-head">
+  <h1>מחזור קניות</h1>
+  <p>הושלם ב-<%= new Date(cycle.completed_at).toLocaleString('he-IL') %></p>
+</div>
+
+<% if (items.length === 0) { %>
+  <div class="empty-state">לא היו פריטים ברשימה הראשית של מחזור זה.</div>
+<% } else { %>
+  <table class="list-table">
+    <thead>
+      <tr><th>מוצר</th><th>כמות</th><th>סטטוס</th><th>הערה</th></tr>
+    </thead>
+    <tbody>
+      <% items.forEach(function(item) { %>
+        <tr>
+          <td><%= item.product_name %></td>
+          <td><%= item.quantity || '—' %></td>
+          <td>
+            <span class="stamp <%= item.bought ? 'approved' : 'rejected' %>" style="min-width: 60px; font-size: 0.72rem;">
+              <%= item.bought ? 'נקנה' : 'לא נקנה' %>
+            </span>
+          </td>
+          <td><%= item.note || '—' %></td>
+        </tr>
+      <% }); %>
+    </tbody>
+  </table>
+<% } %>
+
+<div class="btn-row" style="margin-top: 16px;">
+  <a class="btn btn-secondary" href="/history">חזרה להיסטוריה</a>
+</div>
+<%- include('partials/footer') %>

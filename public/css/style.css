@@ -1,0 +1,482 @@
+/* ---------------------------------------------------------------
+   Design concept: household grocery-approval app as a "stamped
+   ticket" system — every item is a ticket that gets a rubber-stamp
+   verdict (ממתין / אושר / נדחה) from a parent. The stamp badge is
+   the one signature element, reused everywhere status appears.
+   --------------------------------------------------------------- */
+
+:root {
+  --bg: #f2f5ee;
+  --surface: #ffffff;
+  --ink: #1f2a22;
+  --ink-soft: #4b5c4f;
+  --border: #dde5d4;
+  --primary: #1f7a5c;
+  --primary-ink: #0f4a37;
+  --amber: #d98e2b;
+  --amber-ink: #7a4e10;
+  --danger: #b23a55;
+  --danger-ink: #7a2138;
+  --radius: 14px;
+  --shadow: 0 2px 10px rgba(31, 42, 34, 0.08);
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #14201a;
+    --surface: #1c2b22;
+    --ink: #edf3e9;
+    --ink-soft: #b7c6bb;
+    --border: #2c3d31;
+    --primary: #4fb98c;
+    --primary-ink: #bdf0dc;
+    --amber: #f0ac4c;
+    --amber-ink: #ffe2ae;
+    --danger: #ef8098;
+    --danger-ink: #ffd3dd;
+    --shadow: 0 2px 14px rgba(0, 0, 0, 0.35);
+    color-scheme: dark;
+  }
+}
+
+:root[data-theme="dark"] {
+  --bg: #14201a;
+  --surface: #1c2b22;
+  --ink: #edf3e9;
+  --ink-soft: #b7c6bb;
+  --border: #2c3d31;
+  --primary: #4fb98c;
+  --primary-ink: #bdf0dc;
+  --amber: #f0ac4c;
+  --amber-ink: #ffe2ae;
+  --danger: #ef8098;
+  --danger-ink: #ffd3dd;
+  --shadow: 0 2px 14px rgba(0, 0, 0, 0.35);
+  color-scheme: dark;
+}
+
+:root[data-theme="light"] {
+  --bg: #f2f5ee;
+  --surface: #ffffff;
+  --ink: #1f2a22;
+  --ink-soft: #4b5c4f;
+  --border: #dde5d4;
+  --primary: #1f7a5c;
+  --primary-ink: #0f4a37;
+  --amber: #d98e2b;
+  --amber-ink: #7a4e10;
+  --danger: #b23a55;
+  --danger-ink: #7a2138;
+  --shadow: 0 2px 10px rgba(31, 42, 34, 0.08);
+  color-scheme: light;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: "Assistant", "Segoe UI", Tahoma, Arial, sans-serif;
+  font-size: 16px;
+  line-height: 1.5;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+h1, h2, h3, .brand, .stamp {
+  font-family: "Suez One", "Assistant", Georgia, serif;
+  font-weight: 400;
+}
+
+h1 { font-size: 1.6rem; margin: 0 0 4px; }
+h2 { font-size: 1.25rem; margin: 0 0 12px; }
+h3 { font-size: 1.05rem; margin: 0 0 8px; }
+
+a { color: var(--primary-ink); }
+
+/* ---- App bar ---- */
+
+.app-bar {
+  background: var(--primary);
+  color: #fff;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  box-shadow: var(--shadow);
+}
+
+.app-bar-inner {
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 10px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.app-bar .brand {
+  font-size: 1.3rem;
+  color: #fff;
+  text-decoration: none;
+  letter-spacing: 0.5px;
+}
+
+.app-bar .who {
+  font-size: 0.85rem;
+  opacity: 0.9;
+}
+
+.app-bar .who a {
+  color: #fff;
+  text-decoration: underline;
+  text-decoration-color: rgba(255, 255, 255, 0.5);
+}
+
+.tabs {
+  max-width: 640px;
+  margin: 0 auto;
+  display: flex;
+  gap: 4px;
+  padding: 0 10px 10px;
+  overflow-x: auto;
+}
+
+.tabs a {
+  flex: none;
+  color: rgba(255, 255, 255, 0.85);
+  text-decoration: none;
+  font-size: 0.88rem;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.12);
+  white-space: nowrap;
+}
+
+.tabs a.active {
+  background: #fff;
+  color: var(--primary-ink);
+  font-weight: 600;
+}
+
+/* ---- Layout ---- */
+
+main {
+  max-width: 640px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 20px 16px 48px;
+  flex: 1;
+}
+
+.page-head {
+  margin-bottom: 18px;
+}
+
+.page-head p {
+  color: var(--ink-soft);
+  margin: 4px 0 0;
+}
+
+.banner {
+  border-radius: var(--radius);
+  padding: 12px 16px;
+  margin-bottom: 16px;
+  font-size: 0.92rem;
+  border: 1px solid var(--border);
+  background: var(--surface);
+}
+
+.banner.locked {
+  background: color-mix(in srgb, var(--amber) 14%, var(--surface));
+  border-color: var(--amber);
+  color: var(--amber-ink);
+}
+
+.banner.info {
+  background: color-mix(in srgb, var(--primary) 10%, var(--surface));
+  border-color: var(--primary);
+  color: var(--primary-ink);
+}
+
+/* ---- Ticket cards (the item rows) ---- */
+
+.ticket {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 14px 16px;
+  margin-bottom: 12px;
+  position: relative;
+  border-inline-start: 5px solid var(--border);
+}
+
+.ticket.status-pending { border-inline-start-color: var(--amber); }
+.ticket.status-approved { border-inline-start-color: var(--primary); opacity: 0.82; }
+.ticket.status-rejected { border-inline-start-color: var(--danger); }
+
+.ticket-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.ticket-main { flex: 1; min-width: 0; }
+
+.ticket-product {
+  font-weight: 600;
+  font-size: 1.05rem;
+}
+
+.ticket-meta {
+  color: var(--ink-soft);
+  font-size: 0.88rem;
+  margin-top: 2px;
+}
+
+.ticket-submitter {
+  font-size: 0.8rem;
+  color: var(--ink-soft);
+  margin-top: 4px;
+}
+
+/* ---- Signature element: the rubber stamp ---- */
+
+.stamp {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 74px;
+  padding: 5px 10px;
+  border-radius: 8px;
+  border: 2.5px solid currentColor;
+  font-size: 0.78rem;
+  letter-spacing: 0.5px;
+  transform: rotate(-6deg);
+  flex: none;
+  animation: stamp-in 240ms ease-out;
+}
+
+@keyframes stamp-in {
+  from { transform: rotate(-6deg) scale(1.5); opacity: 0; }
+  to { transform: rotate(-6deg) scale(1); opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .stamp { animation: none; }
+}
+
+.stamp.pending { color: var(--amber-ink); background: color-mix(in srgb, var(--amber) 16%, transparent); }
+.stamp.approved { color: var(--primary-ink); background: color-mix(in srgb, var(--primary) 16%, transparent); }
+.stamp.rejected { color: var(--danger-ink); background: color-mix(in srgb, var(--danger) 16%, transparent); }
+
+/* ---- Forms & buttons ---- */
+
+.field {
+  margin-bottom: 12px;
+}
+
+label {
+  display: block;
+  font-size: 0.85rem;
+  color: var(--ink-soft);
+  margin-bottom: 4px;
+}
+
+input[type="text"], textarea {
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--ink);
+  font-family: inherit;
+  font-size: 1rem;
+}
+
+input[type="text"]:focus, textarea:focus, button:focus-visible, a:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--primary) 55%, transparent);
+  outline-offset: 2px;
+}
+
+textarea { resize: vertical; min-height: 60px; }
+
+button, .btn {
+  font-family: inherit;
+  font-size: 0.95rem;
+  border-radius: 10px;
+  border: 1px solid transparent;
+  padding: 9px 16px;
+  cursor: pointer;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: transform 80ms ease-out;
+}
+
+button:active, .btn:active { transform: scale(0.97); }
+
+.btn-primary { background: var(--primary); color: #fff; }
+.btn-approve { background: var(--primary); color: #fff; }
+.btn-reject { background: transparent; color: var(--danger-ink); border-color: var(--danger); }
+.btn-secondary { background: transparent; color: var(--ink); border-color: var(--border); }
+.btn-danger { background: var(--danger); color: #fff; }
+.btn-block { width: 100%; justify-content: center; }
+.btn[disabled] { opacity: 0.5; cursor: not-allowed; }
+
+.btn-row {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+  flex-wrap: wrap;
+}
+
+/* ---- Name picker ---- */
+
+.picker-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  margin-top: 24px;
+}
+
+.picker-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 28px 12px;
+  text-align: center;
+  text-decoration: none;
+  color: var(--ink);
+  font-family: "Suez One", serif;
+  font-size: 1.3rem;
+}
+
+.picker-card small {
+  display: block;
+  font-family: "Assistant", sans-serif;
+  font-size: 0.75rem;
+  color: var(--ink-soft);
+  margin-top: 6px;
+}
+
+.picker-card:active { transform: scale(0.98); }
+
+/* ---- Tables (main list, history) ---- */
+
+.list-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: var(--surface);
+  border-radius: var(--radius);
+  overflow: hidden;
+  box-shadow: var(--shadow);
+  border: 1px solid var(--border);
+}
+
+.list-table th, .list-table td {
+  padding: 10px 12px;
+  text-align: start;
+  border-bottom: 1px solid var(--border);
+  font-size: 0.92rem;
+}
+
+.list-table th {
+  background: color-mix(in srgb, var(--primary) 8%, var(--surface));
+  color: var(--primary-ink);
+  font-weight: 600;
+}
+
+.list-table tr:last-child td { border-bottom: none; }
+
+.empty-state {
+  text-align: center;
+  padding: 40px 20px;
+  color: var(--ink-soft);
+}
+
+.checklist-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 12px 14px;
+  margin-bottom: 10px;
+}
+
+.checklist-row .info { flex: 1; }
+
+.toggle {
+  display: inline-flex;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  overflow: hidden;
+  flex: none;
+}
+
+.toggle button {
+  border: none;
+  border-radius: 0;
+  padding: 6px 14px;
+  background: transparent;
+  color: var(--ink-soft);
+  font-size: 0.85rem;
+}
+
+.toggle button.active.bought { background: var(--primary); color: #fff; }
+.toggle button.active.not-bought { background: var(--danger); color: #fff; }
+
+.history-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 14px 16px;
+  margin-bottom: 12px;
+  text-decoration: none;
+  color: var(--ink);
+  display: block;
+}
+
+.history-card .date { font-weight: 600; }
+.history-card .summary { color: var(--ink-soft); font-size: 0.88rem; margin-top: 4px; }
+
+.toast {
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--ink);
+  color: var(--bg);
+  padding: 10px 18px;
+  border-radius: 999px;
+  font-size: 0.88rem;
+  box-shadow: var(--shadow);
+  z-index: 100;
+}
+
+.helper-text {
+  font-size: 0.82rem;
+  color: var(--ink-soft);
+  margin-top: 6px;
+}
+
+@media (max-width: 420px) {
+  .picker-grid { grid-template-columns: 1fr 1fr; gap: 10px; }
+  .picker-card { padding: 22px 8px; font-size: 1.1rem; }
+}

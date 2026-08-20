@@ -1,0 +1,49 @@
+<%- include('partials/header', { title: 'דיווח קניות', activeTab: 'purchase-report', currentUser: currentUser }) %>
+<div class="page-head">
+  <h1>דיווח קניות</h1>
+  <p>אחרי החזרה מהקניות, סמנו מה נקנה בפועל ומה לא.</p>
+</div>
+
+<% if (cycle.status === 'open') { %>
+  <div class="banner info">
+    יש לנעול קודם את הרשימה הראשית לפני שאפשר לדווח על קניות.
+    <a href="/main-list">מעבר לרשימה הראשית</a>
+  </div>
+<% } else if (items.length === 0) { %>
+  <div class="empty-state">הרשימה הראשית נעולה אך ריקה — אפשר להגיש דיווח ריק כדי לפתוח מחזור חדש.</div>
+  <% if (canSubmit) { %>
+    <div id="report-error" class="helper-text" style="color: var(--danger-ink); display: none;"></div>
+    <button id="submit-report-btn" class="btn btn-primary btn-block">הגש דיווח וסגור מחזור</button>
+  <% } %>
+<% } else { %>
+  <% if (!canSubmit) { %>
+    <div class="banner locked">הרשימה נעולה — ממתינים לדיווח קניות מהורה (יעל/שחר).</div>
+  <% } %>
+
+  <% items.forEach(function(item) { %>
+    <div class="checklist-row" data-main-list-item-id="<%= item.id %>">
+      <div class="info">
+        <div class="ticket-product"><%= item.product_name %></div>
+        <% if (item.quantity) { %><div class="ticket-meta">כמות: <%= item.quantity %></div><% } %>
+        <% if (canSubmit) { %>
+          <input type="text" class="note-input" placeholder="הערה (אופציונלי, למשל: לא היה במלאי)" style="margin-top:6px;">
+        <% } %>
+      </div>
+      <% if (canSubmit) { %>
+        <div class="toggle" data-bought="false">
+          <button type="button" class="not-bought-btn active not-bought">לא נקנה</button>
+          <button type="button" class="bought-btn">נקנה</button>
+        </div>
+      <% } %>
+    </div>
+  <% }); %>
+
+  <% if (canSubmit) { %>
+    <div id="report-error" class="helper-text" style="color: var(--danger-ink); display: none;"></div>
+    <button id="submit-report-btn" class="btn btn-primary btn-block">הגש דיווח וסגור מחזור</button>
+    <p class="helper-text">שליחת הדיווח תסגור את המחזור הנוכחי ותפתח רשימות חדשות לכולם.</p>
+  <% } %>
+<% } %>
+
+<script src="/js/purchaseReport.js"></script>
+<%- include('partials/footer') %>

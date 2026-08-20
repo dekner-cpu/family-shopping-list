@@ -1,0 +1,17 @@
+<%- include('partials/header', { title: 'היסטוריה', activeTab: 'history', currentUser: currentUser }) %>
+<div class="page-head">
+  <h1>היסטוריית מחזורים</h1>
+  <p>מחזורי קניות שהושלמו בעבר.</p>
+</div>
+
+<% if (summaries.length === 0) { %>
+  <div class="empty-state">עדיין לא הושלם אף מחזור קניות.</div>
+<% } %>
+
+<% summaries.forEach(function(s) { %>
+  <a class="history-card" href="/history/<%= s.cycle.id %>">
+    <div class="date"><%= new Date(s.cycle.completed_at).toLocaleString('he-IL') %></div>
+    <div class="summary"><%= s.total %> פריטים · <%= s.bought %> נקנו · <%= s.notBought %> לא נקנו</div>
+  </a>
+<% }); %>
+<%- include('partials/footer') %>

@@ -1,0 +1,17 @@
+<%- include('partials/header', { title: 'מי אתה?' }) %>
+<div class="page-head">
+  <h1>מי אתה?</h1>
+  <p>בחרו את השם שלכם כדי להיכנס לרשימת הקניות המשפחתית.</p>
+</div>
+<div class="picker-grid">
+  <% users.forEach(function(u) { %>
+    <form method="post" action="/session">
+      <input type="hidden" name="userId" value="<%= u.id %>">
+      <button type="submit" class="picker-card">
+        <%= u.name %>
+        <small><%= u.role === 'parent' ? 'הורה — יכול לאשר' : 'מעלה רשימות' %></small>
+      </button>
+    </form>
+  <% }); %>
+</div>
+<%- include('partials/footer') %>
