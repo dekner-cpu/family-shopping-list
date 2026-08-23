@@ -16,7 +16,9 @@
       <a class="brand" href="/my-list">רשימת קניות</a>
       <div class="who">
         שלום, <strong><%= currentUser.name %></strong>
-        · <a href="/session/logout">החלף משתמש</a>
+        · <form method="post" action="/session/logout" style="display:inline;">
+            <button type="submit" class="link-button">החלף משתמש</button>
+          </form>
       </div>
     </div>
     <% const active = typeof activeTab !== 'undefined' ? activeTab : ''; %>
