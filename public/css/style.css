@@ -181,6 +181,34 @@ a { color: var(--primary-ink); }
   font-weight: 600;
 }
 
+.push-banner {
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 0 10px 10px;
+}
+
+.push-btn {
+  width: 100%;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+  font-family: inherit;
+  font-size: 0.85rem;
+  padding: 8px 12px;
+  cursor: pointer;
+}
+
+.push-btn.subscribed {
+  background: rgba(255, 255, 255, 0.22);
+  cursor: default;
+}
+
+.push-btn[disabled] {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
 /* ---- Layout ---- */
 
 main {

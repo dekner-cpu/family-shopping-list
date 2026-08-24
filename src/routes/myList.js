@@ -2,6 +2,7 @@ const express = require('express');
 const db = require('../db/knex');
 const requireUser = require('../middleware/requireUser');
 const { getCurrentCycle } = require('../services/cycleService');
+const { notifyParentsOfPendingItem } = require('../services/pushService');
 
 const router = express.Router();
 
@@ -48,6 +49,12 @@ router.post('/api/items', async (req, res) => {
     .returning('*');
 
   res.status(201).json({ item });
+
+  notifyParentsOfPendingItem({
+    submitterUserId: req.user.id,
+    submitterName: req.user.name,
+    productName: item.product_name,
+  }).catch((err) => console.error('push notify failed:', err.message));
 });
 
 router.put('/api/items/:id', async (req, res) => {
@@ -73,7 +80,16 @@ router.put('/api/items/:id', async (req, res) => {
     })
     .returning('*');
 
-  res.json({ item: updated, resubmitted: item.status === 'rejected' });
+  const resubmitted = item.status === 'rejected';
+  res.json({ item: updated, resubmitted });
+
+  if (resubmitted) {
+    notifyParentsOfPendingItem({
+      submitterUserId: req.user.id,
+      submitterName: req.user.name,
+      productName: updated.product_name,
+    }).catch((err) => console.error('push notify failed:', err.message));
+  }
 });
 
 router.delete('/api/items/:id', async (req, res) => {

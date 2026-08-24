@@ -45,6 +45,12 @@
       <a href="/purchase-report" class="<%= active === 'purchase-report' ? 'active' : '' %>">דיווח קניות</a>
       <a href="/history" class="<%= active === 'history' ? 'active' : '' %>">היסטוריה</a>
     </nav>
+    <% if (currentUser.role === 'parent') { %>
+      <div class="push-banner">
+        <button id="push-toggle-btn" class="push-btn" type="button">🔔 הפעל התראות על פריטים חדשים</button>
+      </div>
+      <script src="/js/push.js"></script>
+    <% } %>
   </header>
 <% } %>
 <main>
