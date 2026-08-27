@@ -3,6 +3,7 @@ const db = require('../db/knex');
 const requireUser = require('../middleware/requireUser');
 const requireParent = require('../middleware/requireParent');
 const { getCurrentCycle, submitPurchaseReport } = require('../services/cycleService');
+const { notifyPurchaseReportCompleted } = require('../services/pushService');
 
 const router = express.Router();
 
@@ -30,6 +31,13 @@ router.post('/api/purchase-report/submit', requireParent, async (req, res) => {
     const entries = Array.isArray(req.body.items) ? req.body.items : [];
     const result = await submitPurchaseReport(cycle.id, entries);
     res.json({ redirect: `/history/${result.completedCycleId}` });
+
+    notifyPurchaseReportCompleted({
+      reporterUserId: req.user.id,
+      reporterName: req.user.name,
+      reportItems: result.reportItems,
+      cycleId: result.completedCycleId,
+    }).catch((err) => console.error('push notify failed:', err.message));
   } catch (err) {
     res.status(err.status || 500).json({ error: err.message });
   }

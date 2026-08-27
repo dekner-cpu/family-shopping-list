@@ -138,17 +138,17 @@ async function submitPurchaseReport(cycleId, reportEntries) {
     const mainListItems = await trx('main_list_items').where({ cycle_id: cycleId });
     const entryByMainListItemId = new Map(reportEntries.map((e) => [Number(e.mainListItemId), e]));
 
-    if (mainListItems.length > 0) {
-      const rows = mainListItems.map((mli) => {
-        const entry = entryByMainListItemId.get(mli.id) || {};
-        return {
-          cycle_id: cycleId,
-          product_name: mli.product_name,
-          quantity: mli.quantity,
-          bought: Boolean(entry.bought),
-          note: entry.note || null,
-        };
-      });
+    const rows = mainListItems.map((mli) => {
+      const entry = entryByMainListItemId.get(mli.id) || {};
+      return {
+        cycle_id: cycleId,
+        product_name: mli.product_name,
+        quantity: mli.quantity,
+        bought: Boolean(entry.bought),
+        note: entry.note || null,
+      };
+    });
+    if (rows.length > 0) {
       await trx('purchase_report_items').insert(rows);
     }
 
@@ -172,7 +172,7 @@ async function submitPurchaseReport(cycleId, reportEntries) {
       .whereIn('status', ['pending', 'rejected'])
       .update({ cycle_id: newCycleId });
 
-    return { completedCycleId: cycleId, newCycleId };
+    return { completedCycleId: cycleId, newCycleId, reportItems: rows };
   });
 }
 

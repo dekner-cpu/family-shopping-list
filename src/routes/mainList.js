@@ -3,6 +3,7 @@ const db = require('../db/knex');
 const requireUser = require('../middleware/requireUser');
 const requireParent = require('../middleware/requireParent');
 const { getCurrentCycle, lockCycle, unlockCycle } = require('../services/cycleService');
+const { notifySystemMessage } = require('../services/pushService');
 
 const router = express.Router();
 
@@ -44,6 +45,18 @@ router.post('/api/main-list/unlock', requireParent, async (req, res) => {
   } catch (err) {
     res.status(err.status || 500).json({ error: err.message });
   }
+});
+
+router.post('/api/system-message/send', requireParent, async (req, res) => {
+  const text = (req.body.text || '').trim();
+  if (!text) return res.status(400).json({ error: 'יש להקליד הודעה' });
+  if (text.length > 500) return res.status(400).json({ error: 'ההודעה ארוכה מדי (עד 500 תווים)' });
+
+  res.json({ ok: true });
+
+  notifySystemMessage({ senderUserId: req.user.id, text }).catch((err) =>
+    console.error('push notify failed:', err.message)
+  );
 });
 
 module.exports = router;

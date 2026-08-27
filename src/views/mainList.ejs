@@ -18,6 +18,19 @@
 <div id="lock-error" class="helper-text" style="color: var(--danger-ink); display: none;"></div>
 
 <% if (currentUser.role === 'parent') { %>
+  <div class="ticket" style="margin-bottom: 18px;">
+    <h3>שליחת הודעת מערכת</h3>
+    <form id="system-message-form">
+      <div class="field">
+        <label for="system-message-text">הודעה לכל המשתמשים</label>
+        <textarea id="system-message-text" name="text" placeholder="למשל: יוצאים לקניות היום ב-18:00" required></textarea>
+      </div>
+      <div id="system-message-error" class="helper-text" style="color: var(--danger-ink); display: none;"></div>
+      <div id="system-message-success" class="helper-text" style="color: var(--primary-ink); display: none;">ההודעה נשלחה!</div>
+      <button type="submit" class="btn btn-secondary">שלח הודעת מערכת</button>
+    </form>
+  </div>
+
   <div class="btn-row" style="margin-bottom: 18px;">
     <% if (cycle.status === 'open') { %>
       <button id="lock-btn" class="btn btn-primary">נעל רשימה</button>
@@ -64,5 +77,33 @@
   if (lockBtn) lockBtn.addEventListener('click', () => callLockApi('/api/main-list/lock'));
   const unlockBtn = document.getElementById('unlock-btn');
   if (unlockBtn) unlockBtn.addEventListener('click', () => callLockApi('/api/main-list/unlock'));
+
+  const systemMessageForm = document.getElementById('system-message-form');
+  if (systemMessageForm) {
+    systemMessageForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const errorBox = document.getElementById('system-message-error');
+      const successBox = document.getElementById('system-message-success');
+      errorBox.style.display = 'none';
+      successBox.style.display = 'none';
+      const textarea = document.getElementById('system-message-text');
+      const text = textarea.value.trim();
+      if (!text) return;
+      try {
+        const res = await fetch('/api/system-message/send', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ text }),
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(data.error || 'משהו השתבש, נסו שוב');
+        textarea.value = '';
+        successBox.style.display = 'block';
+      } catch (err) {
+        errorBox.textContent = err.message;
+        errorBox.style.display = 'block';
+      }
+    });
+  }
 </script>
 <%- include('partials/footer') %>

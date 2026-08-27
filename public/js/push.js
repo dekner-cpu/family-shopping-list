@@ -26,7 +26,7 @@
       btn.textContent = '🔔 התראות פעילות';
       btn.classList.add('subscribed');
     } else {
-      btn.textContent = '🔔 הפעל התראות על פריטים חדשים';
+      btn.textContent = '🔔 הפעל התראות';
       btn.classList.remove('subscribed');
     }
   }

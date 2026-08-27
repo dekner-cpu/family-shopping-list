@@ -83,10 +83,77 @@ async function notifyParentsOfPendingItem({ submitterUserId, submitterName, prod
   await Promise.all(targetIds.map((userId) => sendToUser(userId, payload)));
 }
 
+/**
+ * Broadcasts a payload to every user except one (e.g. whoever triggered the
+ * notification), regardless of role.
+ */
+async function notifyAllExcept(excludeUserId, payload) {
+  if (!getPublicKey()) return; // push not configured; silently skip
+
+  const recipients = await db('users').whereNot({ id: excludeUserId });
+  await Promise.all(recipients.map((user) => sendToUser(user.id, payload)));
+}
+
+/**
+ * Notifies everyone except the reporting parent that purchase reporting is
+ * done, summarizing what was bought and what wasn't.
+ */
+async function notifyPurchaseReportCompleted({ reporterUserId, reporterName, reportItems, cycleId }) {
+  const bought = reportItems.filter((item) => item.bought).map((item) => item.product_name);
+  const notBought = reportItems.filter((item) => !item.bought).map((item) => item.product_name);
+
+  const lines = [`${reporterName} סיימו לדווח על הקניות ✅`];
+  lines.push(bought.length ? `נרכש: ${bought.join(', ')}` : 'שום דבר לא נרכש');
+  if (notBought.length) lines.push(`לא נרכש: ${notBought.join(', ')}`);
+
+  await notifyAllExcept(reporterUserId, {
+    title: 'רשימת קניות',
+    body: lines.join('\n'),
+    url: `/history/${cycleId}`,
+  });
+}
+
+/**
+ * Keyword -> emoji rules used to pick a few emojis relevant to a system
+ * message's content; falls back to a generic megaphone when nothing matches.
+ */
+const SYSTEM_MESSAGE_EMOJI_RULES = [
+  { pattern: /דחוף|חשוב|עכשיו|מיידי|תשומת לב/, emoji: '⚠️' },
+  { pattern: /בטל|ביטול|נדחה|נדחית|לא נצא/, emoji: '❌' },
+  { pattern: /מבצע|הנחה|זול|חיסכון|מחיר/, emoji: '🏷️' },
+  { pattern: /תזכורת|לזכור|תשכחו/, emoji: '⏰' },
+  { pattern: /שעה|מחר|היום|בערב|בבוקר|בצהריים|מאוחר|מוקדם/, emoji: '🕒' },
+  { pattern: /גשם|מזג האוויר|קור|חום|שלג/, emoji: '☔' },
+  { pattern: /חג|חופש|חגיגה|מסיבה|יום הולדת/, emoji: '🎉' },
+  { pattern: /תודה|כל הכבוד|יופי|מעולה|כיף/, emoji: '🙏' },
+  { pattern: /סופר|קניות|חנות|שוק|מכולת/, emoji: '🛒' },
+];
+
+function pickRelevantEmojis(text) {
+  const matches = SYSTEM_MESSAGE_EMOJI_RULES.filter((rule) => rule.pattern.test(text)).map((rule) => rule.emoji);
+  const unique = [...new Set(matches)].slice(0, 3);
+  return unique.length ? unique.join(' ') : '📢';
+}
+
+/**
+ * Broadcasts a free-text system message from a parent to everyone else,
+ * prefixed with the fixed "הודעת מערכת:" label and a few relevant emojis.
+ */
+async function notifySystemMessage({ senderUserId, text }) {
+  const emojis = pickRelevantEmojis(text);
+  await notifyAllExcept(senderUserId, {
+    title: 'רשימת קניות',
+    body: `הודעת מערכת: ${text} ${emojis}`,
+    url: '/main-list',
+  });
+}
+
 module.exports = {
   getPublicKey,
   selectTargetParentUserIds,
   saveSubscription,
   removeSubscription,
   notifyParentsOfPendingItem,
+  notifyPurchaseReportCompleted,
+  notifySystemMessage,
 };
