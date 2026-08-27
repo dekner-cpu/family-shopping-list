@@ -3,7 +3,11 @@
 // fetch handler for "Add to Home Screen" to offer a real app-like install).
 // It intentionally caches only static assets, never pages or /api/* calls --
 // approvals, the main list, and reports must always reflect the live server.
-const CACHE_NAME = 'shopping-app-static-v1';
+// Bump this string on every deploy that changes a cached asset (style.css in
+// particular) -- otherwise a browser that already installed this service
+// worker keeps serving whatever it cached under the old name forever, since
+// the SW script itself rarely changes and nothing else invalidates the cache.
+const CACHE_NAME = 'shopping-app-static-v2';
 const STATIC_ASSETS = [
   '/css/style.css',
   '/js/myList.js',
@@ -13,7 +17,12 @@ const STATIC_ASSETS = [
 ];
 
 self.addEventListener('install', (event) => {
-  event.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.addAll(STATIC_ASSETS)));
+  event.waitUntil(
+    caches
+      .open(CACHE_NAME)
+      .then((cache) => cache.addAll(STATIC_ASSETS))
+      .then(() => self.skipWaiting())
+  );
 });
 
 self.addEventListener('activate', (event) => {
@@ -21,6 +30,7 @@ self.addEventListener('activate', (event) => {
     caches
       .keys()
       .then((keys) => Promise.all(keys.filter((key) => key !== CACHE_NAME).map((key) => caches.delete(key))))
+      .then(() => self.clients.claim())
   );
 });
 
