@@ -10,6 +10,7 @@ const mainListRoutes = require('./routes/mainList');
 const purchaseReportRoutes = require('./routes/purchaseReport');
 const historyRoutes = require('./routes/history');
 const pushRoutes = require('./routes/push');
+const systemMessageRoutes = require('./routes/systemMessage');
 
 const app = express();
 
@@ -34,6 +35,7 @@ app.use(mainListRoutes);
 app.use(purchaseReportRoutes);
 app.use(historyRoutes);
 app.use(pushRoutes);
+app.use(systemMessageRoutes);
 
 app.use((req, res) => {
   res.status(404).render('error', { message: 'העמוד המבוקש לא נמצא', currentUser: req.user });
