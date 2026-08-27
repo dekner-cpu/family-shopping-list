@@ -1,29 +1,14 @@
-document.querySelectorAll('.toggle').forEach((toggle) => {
-  const boughtBtn = toggle.querySelector('.bought-btn');
-  const notBoughtBtn = toggle.querySelector('.not-bought-btn');
-
-  const setBought = (bought) => {
-    toggle.dataset.bought = bought ? 'true' : 'false';
-    boughtBtn.classList.toggle('active', bought);
-    boughtBtn.classList.toggle('bought', bought);
-    notBoughtBtn.classList.toggle('active', !bought);
-  };
-
-  boughtBtn.addEventListener('click', () => setBought(true));
-  notBoughtBtn.addEventListener('click', () => setBought(false));
-});
-
 const submitBtn = document.getElementById('submit-report-btn');
 if (submitBtn) {
   submitBtn.addEventListener('click', async () => {
     if (!confirm('פעולה זו תסגור את המחזור הנוכחי ותפתח רשימות חדשות לכולם. להמשיך?')) return;
 
     const items = Array.from(document.querySelectorAll('.checklist-row')).map((row) => {
-      const toggle = row.querySelector('.toggle');
+      const checkbox = row.querySelector('.bought-checkbox');
       const noteInput = row.querySelector('.note-input');
       return {
         mainListItemId: Number(row.dataset.mainListItemId),
-        bought: toggle ? toggle.dataset.bought === 'true' : false,
+        bought: checkbox ? checkbox.checked : false,
         note: noteInput ? noteInput.value.trim() : '',
       };
     });

@@ -1,5 +1,6 @@
 const db = require('../db/knex');
-const { normalizeProductName, mergeQuantities, mergeNotes } = require('./mergeService');
+const { normalizeProductName, mergeQuantities, mergeNotes, findFuzzyMatch } = require('./mergeService');
+const { resolveCategory, learnCategory, CATEGORIES } = require('./categoryService');
 
 function httpError(message, status) {
   const err = new Error(message);
@@ -33,9 +34,19 @@ async function approveItem(itemId, reviewerId) {
     await trx.raw('SELECT pg_advisory_xact_lock(?)', [item.cycle_id]);
 
     const normalized = normalizeProductName(item.product_name);
-    const existing = await trx('main_list_items')
+    let existing = await trx('main_list_items')
       .where({ cycle_id: item.cycle_id, product_name_normalized: normalized })
       .first();
+
+    if (!existing) {
+      const candidates = await trx('main_list_items')
+        .where({ cycle_id: item.cycle_id })
+        .select('id', 'product_name_normalized');
+      const fuzzyMatch = findFuzzyMatch(normalized, candidates);
+      if (fuzzyMatch) {
+        existing = await trx('main_list_items').where({ id: fuzzyMatch.id }).first();
+      }
+    }
 
     let mainListItemId;
     if (existing) {
@@ -48,6 +59,7 @@ async function approveItem(itemId, reviewerId) {
         });
       mainListItemId = existing.id;
     } else {
+      const category = await resolveCategory(trx, normalized);
       const inserted = await trx('main_list_items')
         .insert({
           cycle_id: item.cycle_id,
@@ -55,6 +67,7 @@ async function approveItem(itemId, reviewerId) {
           product_name_normalized: normalized,
           quantity: item.quantity || null,
           notes: item.notes || null,
+          category,
         })
         .returning('id');
       mainListItemId = inserted[0].id ?? inserted[0];
@@ -138,15 +151,26 @@ async function updateMainListItems(cycleId, itemUpdates) {
       const item = await trx('main_list_items').where({ id: update.id, cycle_id: cycleId }).first();
       if (!item) throw httpError('פריט לא נמצא ברשימה הראשית', 404);
 
+      const normalized = normalizeProductName(productName);
+      const categoryChanged = update.category && CATEGORIES.some((c) => c.key === update.category) && update.category !== item.category;
+      const category = categoryChanged ? update.category : item.category;
+
       await trx('main_list_items')
         .where({ id: item.id })
         .update({
           product_name: productName,
-          product_name_normalized: normalizeProductName(productName),
+          product_name_normalized: normalized,
           quantity: (update.quantity || '').trim() || null,
           notes: (update.notes || '').trim() || null,
+          category,
           updated_at: trx.fn.now(),
         });
+
+      // A parent explicitly picking a category is the strongest signal we have --
+      // remember it so future items with this exact name skip the keyword guess.
+      if (categoryChanged) {
+        await learnCategory(trx, normalized, category);
+      }
     }
 
     return trx('main_list_items').where({ cycle_id: cycleId }).orderBy('product_name', 'asc');

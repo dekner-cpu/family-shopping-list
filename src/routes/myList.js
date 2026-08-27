@@ -1,7 +1,7 @@
 const express = require('express');
 const db = require('../db/knex');
 const requireUser = require('../middleware/requireUser');
-const { getCurrentCycle } = require('../services/cycleService');
+const { getCurrentCycle, approveItem } = require('../services/cycleService');
 const { notifyParentsOfPendingItem } = require('../services/pushService');
 
 const router = express.Router();
@@ -47,6 +47,14 @@ router.post('/api/items', async (req, res) => {
       status: 'pending',
     })
     .returning('*');
+
+  // Parents' own items skip the approval queue entirely and merge straight into
+  // the main list -- but only while the list is open; a locked list can't be
+  // merged into, so it falls back to the normal pending/approve flow.
+  if (req.user.role === 'parent' && cycle.status === 'open') {
+    const approved = await approveItem(item.id, req.user.id);
+    return res.status(201).json({ item: approved });
+  }
 
   res.status(201).json({ item });
 

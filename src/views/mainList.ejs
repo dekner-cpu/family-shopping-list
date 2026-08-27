@@ -33,7 +33,7 @@
 
   <div id="lock-controls" class="btn-row" style="margin-bottom: 18px;">
     <% if (cycle.status === 'open') { %>
-      <button id="lock-btn" class="btn btn-primary">נעל רשימה</button>
+      <button id="lock-btn" class="btn btn-primary">נעל וסדר רשימה</button>
     <% } else if (cycle.status === 'locked') { %>
       <button id="unlock-btn" class="btn btn-secondary">שחרר נעילה (לאישור פריטים נוספים)</button>
     <% } %>
@@ -53,14 +53,15 @@
 <% } else { %>
   <table id="main-list-table" class="list-table">
     <thead>
-      <tr><th>מוצר</th><th>כמות</th><th>הערות</th></tr>
+      <tr><th>מוצר</th><th>כמות</th><th>הערות</th><th>קטגוריה</th></tr>
     </thead>
     <tbody>
       <% items.forEach(function(item) { %>
-        <tr data-item-id="<%= item.id %>" data-product-name="<%= item.product_name %>" data-quantity="<%= item.quantity || '' %>" data-notes="<%= item.notes || '' %>">
+        <tr data-item-id="<%= item.id %>" data-product-name="<%= item.product_name %>" data-quantity="<%= item.quantity || '' %>" data-notes="<%= item.notes || '' %>" data-category="<%= item.category || 'other' %>">
           <td><%= item.product_name %></td>
           <td><%= item.quantity || '—' %></td>
           <td><%= item.notes || '—' %></td>
+          <td><%= categoryLabel(item.category) %></td>
         </tr>
       <% }); %>
     </tbody>
@@ -74,6 +75,8 @@
 <% } %>
 
 <script>
+  const MAIN_LIST_CATEGORIES = <%- JSON.stringify(categories.map(function (c) { return { key: c.key, label: c.label }; })) %>;
+
   async function callLockApi(path) {
     const errorBox = document.getElementById('lock-error');
     errorBox.style.display = 'none';
@@ -117,16 +120,33 @@
     return td;
   }
 
+  function makeCategoryCell(currentCategory) {
+    const td = document.createElement('td');
+    const select = document.createElement('select');
+    select.className = 'edit-category';
+    MAIN_LIST_CATEGORIES.forEach((category) => {
+      const option = document.createElement('option');
+      option.value = category.key;
+      option.textContent = category.label;
+      if (category.key === currentCategory) option.selected = true;
+      select.appendChild(option);
+    });
+    td.appendChild(select);
+    return td;
+  }
+
   function enterEditMode() {
     if (!mainListTable) return;
     mainListTable.querySelectorAll('tbody tr').forEach((tr) => {
       const productName = tr.dataset.productName || '';
       const quantity = tr.dataset.quantity || '';
       const notes = tr.dataset.notes || '';
+      const category = tr.dataset.category || 'other';
       tr.textContent = '';
       tr.appendChild(makeEditableCell('edit-product-name', productName));
       tr.appendChild(makeEditableCell('edit-quantity', quantity));
       tr.appendChild(makeEditableCell('edit-notes', notes));
+      tr.appendChild(makeCategoryCell(category));
     });
     if (editListBtn) editListBtn.style.display = 'none';
     if (editListActions) editListActions.style.display = 'flex';
@@ -167,6 +187,7 @@
         productName: tr.querySelector('.edit-product-name').value.trim(),
         quantity: tr.querySelector('.edit-quantity').value.trim(),
         notes: tr.querySelector('.edit-notes').value.trim(),
+        category: tr.querySelector('.edit-category').value,
       }));
 
       saveListBtn.disabled = true;

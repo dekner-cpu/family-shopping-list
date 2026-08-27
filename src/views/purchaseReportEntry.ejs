@@ -20,22 +20,22 @@
     <div class="banner locked">הרשימה נעולה — ממתינים לדיווח קניות מהורה (יעל/שחר).</div>
   <% } %>
 
-  <% items.forEach(function(item) { %>
-    <div class="checklist-row" data-main-list-item-id="<%= item.id %>">
-      <div class="info">
-        <div class="ticket-product"><%= item.product_name %></div>
-        <% if (item.quantity) { %><div class="ticket-meta">כמות: <%= item.quantity %></div><% } %>
+  <% groups.forEach(function(group) { %>
+    <h2 class="category-heading"><%= group.label %></h2>
+    <% group.items.forEach(function(item) { %>
+      <div class="checklist-row" data-main-list-item-id="<%= item.id %>">
+        <div class="info">
+          <div class="ticket-product"><%= item.product_name %></div>
+          <% if (item.quantity) { %><div class="ticket-meta">כמות: <%= item.quantity %></div><% } %>
+          <% if (canSubmit) { %>
+            <input type="text" class="note-input" placeholder="הערה (אופציונלי, למשל: לא היה במלאי)" style="margin-top:6px;">
+          <% } %>
+        </div>
         <% if (canSubmit) { %>
-          <input type="text" class="note-input" placeholder="הערה (אופציונלי, למשל: לא היה במלאי)" style="margin-top:6px;">
+          <input type="checkbox" class="bought-checkbox" aria-label="נקנה">
         <% } %>
       </div>
-      <% if (canSubmit) { %>
-        <div class="toggle" data-bought="false">
-          <button type="button" class="not-bought-btn active not-bought">לא נקנה</button>
-          <button type="button" class="bought-btn">נקנה</button>
-        </div>
-      <% } %>
-    </div>
+    <% }); %>
   <% }); %>
 
   <% if (canSubmit) { %>

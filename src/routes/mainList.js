@@ -3,6 +3,7 @@ const db = require('../db/knex');
 const requireUser = require('../middleware/requireUser');
 const requireParent = require('../middleware/requireParent');
 const { getCurrentCycle, lockCycle, unlockCycle, updateMainListItems } = require('../services/cycleService');
+const { CATEGORIES, categoryLabel } = require('../services/categoryService');
 
 const router = express.Router();
 
@@ -17,6 +18,8 @@ router.get('/main-list', async (req, res) => {
     currentUser: req.user,
     items,
     cycle,
+    categories: CATEGORIES,
+    categoryLabel,
   });
 });
 

@@ -4,6 +4,7 @@ const requireUser = require('../middleware/requireUser');
 const requireParent = require('../middleware/requireParent');
 const { getCurrentCycle, submitPurchaseReport } = require('../services/cycleService');
 const { notifyPurchaseReportCompleted } = require('../services/pushService');
+const { groupItemsByCategory } = require('../services/categoryService');
 
 const router = express.Router();
 
@@ -14,6 +15,7 @@ router.get('/purchase-report', async (req, res) => {
   const items = cycle.status === 'locked'
     ? await db('main_list_items').where({ cycle_id: cycle.id }).orderBy('product_name', 'asc')
     : [];
+  const groups = groupItemsByCategory(items);
 
   res.render('purchaseReportEntry', {
     title: 'דיווח קניות',
@@ -21,6 +23,7 @@ router.get('/purchase-report', async (req, res) => {
     currentUser: req.user,
     cycle,
     items,
+    groups,
     canSubmit: cycle.status === 'locked' && req.user.role === 'parent',
   });
 });

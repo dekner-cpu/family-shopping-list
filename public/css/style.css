@@ -335,7 +335,7 @@ label {
   margin-bottom: 4px;
 }
 
-input[type="text"], textarea {
+input[type="text"], textarea, select {
   width: 100%;
   padding: 10px 12px;
   border-radius: 10px;
@@ -346,7 +346,7 @@ input[type="text"], textarea {
   font-size: 1rem;
 }
 
-input[type="text"]:focus, textarea:focus, button:focus-visible, a:focus-visible {
+input[type="text"]:focus, textarea:focus, select:focus, button:focus-visible, a:focus-visible {
   outline: 3px solid color-mix(in srgb, var(--primary) 55%, transparent);
   outline-offset: 2px;
 }
@@ -462,25 +462,21 @@ button:active, .btn:active { transform: scale(0.97); }
 
 .checklist-row .info { flex: 1; }
 
-.toggle {
-  display: inline-flex;
-  border: 1px solid var(--border);
-  border-radius: 999px;
-  overflow: hidden;
+.bought-checkbox {
   flex: none;
+  width: 28px;
+  height: 28px;
+  accent-color: var(--primary);
+  cursor: pointer;
 }
 
-.toggle button {
-  border: none;
-  border-radius: 0;
-  padding: 6px 14px;
-  background: transparent;
-  color: var(--ink-soft);
-  font-size: 0.85rem;
+.category-heading {
+  margin-top: 22px;
+  padding-bottom: 6px;
+  border-bottom: 2px solid var(--border);
 }
 
-.toggle button.active.bought { background: var(--primary); color: #fff; }
-.toggle button.active.not-bought { background: var(--danger); color: #fff; }
+.category-heading:first-of-type { margin-top: 0; }
 
 .history-card {
   background: var(--surface);
