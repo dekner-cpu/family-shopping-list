@@ -5,14 +5,14 @@
 </div>
 
 <% if (cycle.status === 'locked') { %>
-  <div class="banner locked">
+  <div id="cycle-banner" class="banner locked">
     הרשימה נעולה — אפשר לצאת לקניות.
     <% if (currentUser.role === 'parent') { %>
       אפשר גם <a href="/purchase-report">לדווח מה נקנה</a> בסיום.
     <% } %>
   </div>
 <% } else { %>
-  <div class="banner info">הרשימה פתוחה לעדכונים — פריטים חדשים שיאושרו יתווספו אליה.</div>
+  <div id="cycle-banner" class="banner info">הרשימה פתוחה לעדכונים — פריטים חדשים שיאושרו יתווספו אליה.</div>
 <% } %>
 
 <div id="lock-error" class="helper-text" style="color: var(--danger-ink); display: none;"></div>
@@ -31,25 +31,33 @@
     </form>
   </div>
 
-  <div class="btn-row" style="margin-bottom: 18px;">
+  <div id="lock-controls" class="btn-row" style="margin-bottom: 18px;">
     <% if (cycle.status === 'open') { %>
       <button id="lock-btn" class="btn btn-primary">נעל רשימה</button>
     <% } else if (cycle.status === 'locked') { %>
       <button id="unlock-btn" class="btn btn-secondary">שחרר נעילה (לאישור פריטים נוספים)</button>
     <% } %>
   </div>
+
+  <% if (items.length > 0) { %>
+    <div class="btn-row" style="margin-bottom: 18px;">
+      <button id="edit-list-btn" class="btn btn-secondary" type="button" data-cycle-status="<%= cycle.status %>">ערוך רשימה</button>
+    </div>
+  <% } %>
 <% } %>
+
+<div id="edit-list-error" class="helper-text" style="color: var(--danger-ink); display: none;"></div>
 
 <% if (items.length === 0) { %>
   <div class="empty-state">עדיין אין פריטים ברשימה הראשית במחזור הנוכחי.</div>
 <% } else { %>
-  <table class="list-table">
+  <table id="main-list-table" class="list-table">
     <thead>
       <tr><th>מוצר</th><th>כמות</th><th>הערות</th></tr>
     </thead>
     <tbody>
       <% items.forEach(function(item) { %>
-        <tr>
+        <tr data-item-id="<%= item.id %>" data-product-name="<%= item.product_name %>" data-quantity="<%= item.quantity || '' %>" data-notes="<%= item.notes || '' %>">
           <td><%= item.product_name %></td>
           <td><%= item.quantity || '—' %></td>
           <td><%= item.notes || '—' %></td>
@@ -57,6 +65,12 @@
       <% }); %>
     </tbody>
   </table>
+  <% if (currentUser.role === 'parent') { %>
+    <div id="edit-list-actions" class="btn-row" style="display: none; margin-top: 12px;">
+      <button id="save-list-btn" class="btn btn-primary" type="button">שמור שינויים</button>
+      <button id="cancel-edit-btn" class="btn btn-secondary" type="button">ביטול</button>
+    </div>
+  <% } %>
 <% } %>
 
 <script>
@@ -77,6 +91,103 @@
   if (lockBtn) lockBtn.addEventListener('click', () => callLockApi('/api/main-list/lock'));
   const unlockBtn = document.getElementById('unlock-btn');
   if (unlockBtn) unlockBtn.addEventListener('click', () => callLockApi('/api/main-list/unlock'));
+
+  const editListBtn = document.getElementById('edit-list-btn');
+  const editListActions = document.getElementById('edit-list-actions');
+  const mainListTable = document.getElementById('main-list-table');
+  const editListError = document.getElementById('edit-list-error');
+
+  function markCycleUnlockedInUi() {
+    const banner = document.getElementById('cycle-banner');
+    if (banner) {
+      banner.className = 'banner info';
+      banner.textContent = 'הרשימה פתוחה לעדכונים — פריטים חדשים שיאושרו יתווספו אליה.';
+    }
+    const lockControls = document.getElementById('lock-controls');
+    if (lockControls) lockControls.style.display = 'none';
+  }
+
+  function makeEditableCell(className, value) {
+    const td = document.createElement('td');
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.className = className;
+    input.value = value;
+    td.appendChild(input);
+    return td;
+  }
+
+  function enterEditMode() {
+    if (!mainListTable) return;
+    mainListTable.querySelectorAll('tbody tr').forEach((tr) => {
+      const productName = tr.dataset.productName || '';
+      const quantity = tr.dataset.quantity || '';
+      const notes = tr.dataset.notes || '';
+      tr.textContent = '';
+      tr.appendChild(makeEditableCell('edit-product-name', productName));
+      tr.appendChild(makeEditableCell('edit-quantity', quantity));
+      tr.appendChild(makeEditableCell('edit-notes', notes));
+    });
+    if (editListBtn) editListBtn.style.display = 'none';
+    if (editListActions) editListActions.style.display = 'flex';
+  }
+
+  if (editListBtn) {
+    editListBtn.addEventListener('click', async () => {
+      if (editListError) editListError.style.display = 'none';
+      editListBtn.disabled = true;
+      try {
+        if (editListBtn.dataset.cycleStatus === 'locked') {
+          const res = await fetch('/api/main-list/unlock', { method: 'POST' });
+          const data = await res.json().catch(() => ({}));
+          if (!res.ok) throw new Error(data.error || 'משהו השתבש, נסו שוב');
+          markCycleUnlockedInUi();
+        }
+        enterEditMode();
+      } catch (err) {
+        if (editListError) {
+          editListError.textContent = err.message;
+          editListError.style.display = 'block';
+        }
+      } finally {
+        editListBtn.disabled = false;
+      }
+    });
+  }
+
+  const cancelEditBtn = document.getElementById('cancel-edit-btn');
+  if (cancelEditBtn) cancelEditBtn.addEventListener('click', () => window.location.reload());
+
+  const saveListBtn = document.getElementById('save-list-btn');
+  if (saveListBtn) {
+    saveListBtn.addEventListener('click', async () => {
+      if (editListError) editListError.style.display = 'none';
+      const items = Array.from(mainListTable.querySelectorAll('tbody tr')).map((tr) => ({
+        id: Number(tr.dataset.itemId),
+        productName: tr.querySelector('.edit-product-name').value.trim(),
+        quantity: tr.querySelector('.edit-quantity').value.trim(),
+        notes: tr.querySelector('.edit-notes').value.trim(),
+      }));
+
+      saveListBtn.disabled = true;
+      try {
+        const res = await fetch('/api/main-list/items', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ items }),
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(data.error || 'משהו השתבש, נסו שוב');
+        window.location.reload();
+      } catch (err) {
+        if (editListError) {
+          editListError.textContent = err.message;
+          editListError.style.display = 'block';
+        }
+        saveListBtn.disabled = false;
+      }
+    });
+  }
 
   const systemMessageForm = document.getElementById('system-message-form');
   if (systemMessageForm) {

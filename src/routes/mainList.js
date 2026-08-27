@@ -2,7 +2,7 @@ const express = require('express');
 const db = require('../db/knex');
 const requireUser = require('../middleware/requireUser');
 const requireParent = require('../middleware/requireParent');
-const { getCurrentCycle, lockCycle, unlockCycle } = require('../services/cycleService');
+const { getCurrentCycle, lockCycle, unlockCycle, updateMainListItems } = require('../services/cycleService');
 
 const router = express.Router();
 
@@ -41,6 +41,17 @@ router.post('/api/main-list/unlock', requireParent, async (req, res) => {
     const cycle = await getCurrentCycle();
     const updated = await unlockCycle(cycle.id);
     res.json({ cycle: updated });
+  } catch (err) {
+    res.status(err.status || 500).json({ error: err.message });
+  }
+});
+
+router.put('/api/main-list/items', requireParent, async (req, res) => {
+  try {
+    const cycle = await getCurrentCycle();
+    const updates = Array.isArray(req.body.items) ? req.body.items : [];
+    const items = await updateMainListItems(cycle.id, updates);
+    res.json({ items });
   } catch (err) {
     res.status(err.status || 500).json({ error: err.message });
   }

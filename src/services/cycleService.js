@@ -122,6 +122,38 @@ async function unlockCycle(cycleId) {
 }
 
 /**
+ * Lets a parent directly correct fields on already-approved/merged main list
+ * items (product name, quantity, notes) -- e.g. fixing a typo after
+ * approval, without having to reject and resubmit the whole item.
+ */
+async function updateMainListItems(cycleId, itemUpdates) {
+  return db.transaction(async (trx) => {
+    const cycle = await trx('shopping_cycles').where({ id: cycleId }).first();
+    if (!cycle) throw httpError('Cycle not found', 404);
+
+    for (const update of itemUpdates) {
+      const productName = (update.productName || '').trim();
+      if (!productName) throw httpError('שם המוצר הוא שדה חובה', 400);
+
+      const item = await trx('main_list_items').where({ id: update.id, cycle_id: cycleId }).first();
+      if (!item) throw httpError('פריט לא נמצא ברשימה הראשית', 404);
+
+      await trx('main_list_items')
+        .where({ id: item.id })
+        .update({
+          product_name: productName,
+          product_name_normalized: normalizeProductName(productName),
+          quantity: (update.quantity || '').trim() || null,
+          notes: (update.notes || '').trim() || null,
+          updated_at: trx.fn.now(),
+        });
+    }
+
+    return trx('main_list_items').where({ cycle_id: cycleId }).orderBy('product_name', 'asc');
+  });
+}
+
+/**
  * Submits the final purchase report, closes the cycle, and resets for the next one:
  * - main_list_items / main_list_item_sources for the cycle are cleared (history lives
  *   on via purchase_report_items, which is self-contained).
@@ -182,5 +214,6 @@ module.exports = {
   rejectItem,
   lockCycle,
   unlockCycle,
+  updateMainListItems,
   submitPurchaseReport,
 };
