@@ -1,5 +1,6 @@
 const webpush = require('web-push');
 const db = require('../db/knex');
+const { pickRelevantEmojis } = require('./emojiService');
 
 const { VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY, VAPID_SUBJECT } = process.env;
 
@@ -114,33 +115,12 @@ async function notifyPurchaseReportCompleted({ reporterUserId, reporterName, rep
 }
 
 /**
- * Keyword -> emoji rules used to pick a few emojis relevant to a system
- * message's content; falls back to a generic megaphone when nothing matches.
- */
-const SYSTEM_MESSAGE_EMOJI_RULES = [
-  { pattern: /דחוף|חשוב|עכשיו|מיידי|תשומת לב/, emoji: '⚠️' },
-  { pattern: /בטל|ביטול|נדחה|נדחית|לא נצא/, emoji: '❌' },
-  { pattern: /מבצע|הנחה|זול|חיסכון|מחיר/, emoji: '🏷️' },
-  { pattern: /תזכורת|לזכור|תשכחו/, emoji: '⏰' },
-  { pattern: /שעה|מחר|היום|בערב|בבוקר|בצהריים|מאוחר|מוקדם/, emoji: '🕒' },
-  { pattern: /גשם|מזג האוויר|קור|חום|שלג/, emoji: '☔' },
-  { pattern: /חג|חופש|חגיגה|מסיבה|יום הולדת/, emoji: '🎉' },
-  { pattern: /תודה|כל הכבוד|יופי|מעולה|כיף/, emoji: '🙏' },
-  { pattern: /סופר|קניות|חנות|שוק|מכולת/, emoji: '🛒' },
-];
-
-function pickRelevantEmojis(text) {
-  const matches = SYSTEM_MESSAGE_EMOJI_RULES.filter((rule) => rule.pattern.test(text)).map((rule) => rule.emoji);
-  const unique = [...new Set(matches)].slice(0, 3);
-  return unique.length ? unique.join(' ') : '📢';
-}
-
-/**
  * Broadcasts a free-text system message from a parent to everyone else,
- * prefixed with the fixed "הודעת מערכת:" label and a few relevant emojis.
+ * prefixed with the fixed "הודעת מערכת:" label and a couple of emojis
+ * relevant to the message's content.
  */
 async function notifySystemMessage({ senderUserId, text }) {
-  const emojis = pickRelevantEmojis(text);
+  const emojis = pickRelevantEmojis(text).join(' ');
   await notifyAllExcept(senderUserId, {
     title: 'רשימת קניות',
     body: `הודעת מערכת: ${text} ${emojis}`,

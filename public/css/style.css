@@ -538,8 +538,11 @@ button:active, .btn:active { transform: scale(0.97); }
   border-radius: var(--radius);
   box-shadow: var(--shadow);
   padding: 22px 20px;
-  max-width: 420px;
-  width: 100%;
+  width: 60vw;
+  min-width: 260px;
+  max-width: 480px;
+  max-height: 60vh;
+  overflow-y: auto;
 }
 
 .modal-title {

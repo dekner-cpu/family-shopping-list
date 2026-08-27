@@ -1,4 +1,5 @@
 const db = require('../db/knex');
+const { pickRelevantEmojis } = require('./emojiService');
 
 function httpError(message, status) {
   const err = new Error(message);
@@ -34,9 +35,10 @@ async function getUnseenSystemMessageForUser(userId) {
   if (!latestUnseen) return null;
 
   const sender = await db('users').where({ id: latestUnseen.sender_user_id }).first();
+  const emojis = pickRelevantEmojis(latestUnseen.text).join(' ');
   return {
     id: latestUnseen.id,
-    text: latestUnseen.text,
+    text: `${latestUnseen.text} ${emojis}`,
     senderName: sender ? sender.name : null,
     createdAt: latestUnseen.created_at,
   };
