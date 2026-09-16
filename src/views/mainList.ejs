@@ -56,13 +56,16 @@
       <tr><th>מוצר</th><th>כמות</th><th>הערות</th><th>קטגוריה</th></tr>
     </thead>
     <tbody>
-      <% items.forEach(function(item) { %>
-        <tr data-item-id="<%= item.id %>" data-product-name="<%= item.product_name %>" data-quantity="<%= item.quantity || '' %>" data-notes="<%= item.notes || '' %>" data-category="<%= item.category || 'other' %>">
-          <td><%= item.product_name %></td>
-          <td><%= item.quantity || '—' %></td>
-          <td><%= item.notes || '—' %></td>
-          <td><%= categoryLabel(item.category) %></td>
-        </tr>
+      <% groups.forEach(function(group) { %>
+        <tr class="category-heading-row"><td colspan="4"><%= group.label %></td></tr>
+        <% group.items.forEach(function(item) { %>
+          <tr data-item-id="<%= item.id %>" data-product-name="<%= item.product_name %>" data-quantity="<%= item.quantity || '' %>" data-notes="<%= item.notes || '' %>" data-category="<%= item.category || 'other' %>">
+            <td><%= item.product_name %></td>
+            <td><%= item.quantity || '—' %></td>
+            <td><%= item.notes || '—' %></td>
+            <td><%= categoryLabel(item.category) %></td>
+          </tr>
+        <% }); %>
       <% }); %>
     </tbody>
   </table>
@@ -137,7 +140,7 @@
 
   function enterEditMode() {
     if (!mainListTable) return;
-    mainListTable.querySelectorAll('tbody tr').forEach((tr) => {
+    mainListTable.querySelectorAll('tbody tr[data-item-id]').forEach((tr) => {
       const productName = tr.dataset.productName || '';
       const quantity = tr.dataset.quantity || '';
       const notes = tr.dataset.notes || '';
@@ -182,7 +185,7 @@
   if (saveListBtn) {
     saveListBtn.addEventListener('click', async () => {
       if (editListError) editListError.style.display = 'none';
-      const items = Array.from(mainListTable.querySelectorAll('tbody tr')).map((tr) => ({
+      const items = Array.from(mainListTable.querySelectorAll('tbody tr[data-item-id]')).map((tr) => ({
         id: Number(tr.dataset.itemId),
         productName: tr.querySelector('.edit-product-name').value.trim(),
         quantity: tr.querySelector('.edit-quantity').value.trim(),

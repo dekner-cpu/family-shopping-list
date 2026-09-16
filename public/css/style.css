@@ -478,6 +478,15 @@ button:active, .btn:active { transform: scale(0.97); }
 
 .category-heading:first-of-type { margin-top: 0; }
 
+.category-heading-row td {
+  font-weight: 600;
+  background: rgba(127, 127, 127, 0.12);
+  border-bottom: 2px solid var(--border);
+  padding-top: 14px;
+}
+
+.category-heading-row:first-child td { padding-top: 8px; }
+
 .history-card {
   background: var(--surface);
   border: 1px solid var(--border);
