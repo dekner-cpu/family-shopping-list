@@ -2,7 +2,7 @@ const express = require('express');
 const db = require('../db/knex');
 const requireUser = require('../middleware/requireUser');
 const requireParent = require('../middleware/requireParent');
-const { getCurrentCycle, lockCycle, unlockCycle, updateMainListItems } = require('../services/cycleService');
+const { getCurrentCycle, lockCycle, unlockCycle, updateMainListItems, deleteMainListItem } = require('../services/cycleService');
 const { CATEGORIES, categoryLabel, groupItemsByCategory } = require('../services/categoryService');
 
 const router = express.Router();
@@ -56,6 +56,16 @@ router.put('/api/main-list/items', requireParent, async (req, res) => {
     const updates = Array.isArray(req.body.items) ? req.body.items : [];
     const items = await updateMainListItems(cycle.id, updates);
     res.json({ items });
+  } catch (err) {
+    res.status(err.status || 500).json({ error: err.message });
+  }
+});
+
+router.delete('/api/main-list/items/:id', requireParent, async (req, res) => {
+  try {
+    const cycle = await getCurrentCycle();
+    await deleteMainListItem(cycle.id, req.params.id);
+    res.status(204).end();
   } catch (err) {
     res.status(err.status || 500).json({ error: err.message });
   }

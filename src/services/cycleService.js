@@ -178,6 +178,23 @@ async function updateMainListItems(cycleId, itemUpdates) {
 }
 
 /**
+ * Removes an item a parent added by mistake (e.g. testing) straight out of the
+ * main list, even though it was already approved/merged. Also clears out the
+ * approved personal_list_items row(s) that contributed to it -- otherwise the
+ * personal_list_items.main_list_item_id FK would block deleting the row -- and
+ * their main_list_item_sources rows cascade-delete along with them.
+ */
+async function deleteMainListItem(cycleId, itemId) {
+  return db.transaction(async (trx) => {
+    const item = await trx('main_list_items').where({ id: itemId, cycle_id: cycleId }).first();
+    if (!item) throw httpError('פריט לא נמצא ברשימה הראשית', 404);
+
+    await trx('personal_list_items').where({ main_list_item_id: itemId }).del();
+    await trx('main_list_items').where({ id: itemId }).del();
+  });
+}
+
+/**
  * Submits the final purchase report, closes the cycle, and resets for the next one:
  * - main_list_items / main_list_item_sources for the cycle are cleared (history lives
  *   on via purchase_report_items, which is self-contained).
@@ -239,5 +256,6 @@ module.exports = {
   lockCycle,
   unlockCycle,
   updateMainListItems,
+  deleteMainListItem,
   submitPurchaseReport,
 };

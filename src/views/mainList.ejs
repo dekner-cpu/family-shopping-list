@@ -53,17 +53,18 @@
 <% } else { %>
   <table id="main-list-table" class="list-table">
     <thead>
-      <tr><th>מוצר</th><th>כמות</th><th>הערות</th><th>קטגוריה</th></tr>
+      <tr><th>מוצר</th><th>כמות</th><th>הערות</th><th>קטגוריה</th><th></th></tr>
     </thead>
     <tbody>
       <% groups.forEach(function(group) { %>
-        <tr class="category-heading-row"><td colspan="4"><%= group.label %></td></tr>
+        <tr class="category-heading-row"><td colspan="5"><%= group.label %></td></tr>
         <% group.items.forEach(function(item) { %>
           <tr data-item-id="<%= item.id %>" data-product-name="<%= item.product_name %>" data-quantity="<%= item.quantity || '' %>" data-notes="<%= item.notes || '' %>" data-category="<%= item.category || 'other' %>">
             <td><%= item.product_name %></td>
             <td><%= item.quantity || '—' %></td>
             <td><%= item.notes || '—' %></td>
             <td><%= categoryLabel(item.category) %></td>
+            <td></td>
           </tr>
         <% }); %>
       <% }); %>
@@ -138,6 +139,17 @@
     return td;
   }
 
+  function makeDeleteCell(itemId) {
+    const td = document.createElement('td');
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'btn btn-secondary delete-main-item-btn';
+    btn.textContent = 'מחק';
+    btn.dataset.itemId = itemId;
+    td.appendChild(btn);
+    return td;
+  }
+
   function enterEditMode() {
     if (!mainListTable) return;
     mainListTable.querySelectorAll('tbody tr[data-item-id]').forEach((tr) => {
@@ -145,14 +157,36 @@
       const quantity = tr.dataset.quantity || '';
       const notes = tr.dataset.notes || '';
       const category = tr.dataset.category || 'other';
+      const itemId = tr.dataset.itemId;
       tr.textContent = '';
       tr.appendChild(makeEditableCell('edit-product-name', productName));
       tr.appendChild(makeEditableCell('edit-quantity', quantity));
       tr.appendChild(makeEditableCell('edit-notes', notes));
       tr.appendChild(makeCategoryCell(category));
+      tr.appendChild(makeDeleteCell(itemId));
     });
     if (editListBtn) editListBtn.style.display = 'none';
     if (editListActions) editListActions.style.display = 'flex';
+  }
+
+  if (mainListTable) {
+    mainListTable.addEventListener('click', async (e) => {
+      const btn = e.target.closest('.delete-main-item-btn');
+      if (!btn) return;
+      if (!confirm('למחוק את המוצר הזה מהרשימה הראשית?')) return;
+      btn.disabled = true;
+      try {
+        const res = await fetch(`/api/main-list/items/${btn.dataset.itemId}`, { method: 'DELETE' });
+        if (!res.ok) {
+          const data = await res.json().catch(() => ({}));
+          throw new Error(data.error || 'משהו השתבש, נסו שוב');
+        }
+        window.location.reload();
+      } catch (err) {
+        alert(err.message);
+        btn.disabled = false;
+      }
+    });
   }
 
   if (editListBtn) {
