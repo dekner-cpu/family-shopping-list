@@ -37,13 +37,10 @@
     <% } else if (cycle.status === 'locked') { %>
       <button id="unlock-btn" class="btn btn-secondary">שחרר נעילה (לאישור פריטים נוספים)</button>
     <% } %>
-  </div>
-
-  <% if (items.length > 0) { %>
-    <div class="btn-row" style="margin-bottom: 18px;">
+    <% if (items.length > 0) { %>
       <button id="edit-list-btn" class="btn btn-secondary" type="button" data-cycle-status="<%= cycle.status %>">ערוך רשימה</button>
-    </div>
-  <% } %>
+    <% } %>
+  </div>
 <% } %>
 
 <div id="edit-list-error" class="helper-text" style="color: var(--danger-ink); display: none;"></div>
@@ -53,11 +50,10 @@
 <% } else { %>
   <table id="main-list-table" class="list-table">
     <thead>
-      <tr><th>מוצר</th><th>כמות</th><th>הערות</th><th>קטגוריה</th><th></th></tr>
+      <tr id="main-list-head-row"><th>מוצר</th><th>כמות</th><th>הערות</th><th>קטגוריה</th><th></th></tr>
     </thead>
     <tbody>
       <% groups.forEach(function(group) { %>
-        <tr class="category-heading-row"><td colspan="5"><%= group.label %></td></tr>
         <% group.items.forEach(function(item) { %>
           <tr data-item-id="<%= item.id %>" data-product-name="<%= item.product_name %>" data-quantity="<%= item.quantity || '' %>" data-notes="<%= item.notes || '' %>" data-category="<%= item.category || 'other' %>">
             <td><%= item.product_name %></td>
@@ -143,25 +139,30 @@
     const td = document.createElement('td');
     const btn = document.createElement('button');
     btn.type = 'button';
-    btn.className = 'btn btn-secondary delete-main-item-btn';
-    btn.textContent = 'מחק';
+    btn.className = 'row-delete-btn delete-main-item-btn';
+    btn.textContent = '−';
+    btn.setAttribute('aria-label', 'מחק פריט');
     btn.dataset.itemId = itemId;
     td.appendChild(btn);
     return td;
   }
 
+  // Edit mode drops the "הערות" column (kept as-is, not editable here) and
+  // swaps the trailing column for a compact delete button, purely so the
+  // many-column edit table fits without widening it; view mode is untouched.
   function enterEditMode() {
     if (!mainListTable) return;
+    const headRow = document.getElementById('main-list-head-row');
+    if (headRow) headRow.innerHTML = '<th>מוצר</th><th>כמות</th><th>קטגוריה</th><th></th>';
+
     mainListTable.querySelectorAll('tbody tr[data-item-id]').forEach((tr) => {
       const productName = tr.dataset.productName || '';
       const quantity = tr.dataset.quantity || '';
-      const notes = tr.dataset.notes || '';
       const category = tr.dataset.category || 'other';
       const itemId = tr.dataset.itemId;
       tr.textContent = '';
       tr.appendChild(makeEditableCell('edit-product-name', productName));
       tr.appendChild(makeEditableCell('edit-quantity', quantity));
-      tr.appendChild(makeEditableCell('edit-notes', notes));
       tr.appendChild(makeCategoryCell(category));
       tr.appendChild(makeDeleteCell(itemId));
     });
@@ -223,7 +224,7 @@
         id: Number(tr.dataset.itemId),
         productName: tr.querySelector('.edit-product-name').value.trim(),
         quantity: tr.querySelector('.edit-quantity').value.trim(),
-        notes: tr.querySelector('.edit-notes').value.trim(),
+        notes: tr.dataset.notes || '',
         category: tr.querySelector('.edit-category').value,
       }));
 

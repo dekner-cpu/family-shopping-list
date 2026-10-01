@@ -478,14 +478,24 @@ button:active, .btn:active { transform: scale(0.97); }
 
 .category-heading:first-of-type { margin-top: 0; }
 
-.category-heading-row td {
-  font-weight: 600;
-  background: rgba(127, 127, 127, 0.12);
-  border-bottom: 2px solid var(--border);
-  padding-top: 14px;
+.row-delete-btn {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: none;
+  background: var(--danger);
+  color: #fff;
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 1;
+  padding: 0;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
-.category-heading-row:first-child td { padding-top: 8px; }
+.row-delete-btn:hover { filter: brightness(0.92); }
 
 .history-card {
   background: var(--surface);
